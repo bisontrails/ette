@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/itzmeanjan/ette/app/data"
 	d "github.com/itzmeanjan/ette/app/data"
-	"github.com/itzmeanjan/ette/app/db"
 	"gorm.io/gorm"
 )
 
@@ -158,84 +157,7 @@ func (t *TransactionConsumer) Send(msg string) {
 		return
 	}
 
-	user := db.GetUserFromAPIKey(t.DB, request.APIKey)
-	if user == nil {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		t.ConnLock.Lock()
-
-		if err := t.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Bad API Key",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver bad API key message to client : %s\n", err.Error())
-		}
-
-		t.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		t.Counter.IncrementSend(1)
-		return
-
-	}
-
-	if !user.Enabled {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		t.ConnLock.Lock()
-
-		if err := t.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Bad API Key",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver bad API key message to client : %s\n", err.Error())
-		}
-
-		t.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		t.Counter.IncrementSend(1)
-		return
-
-	}
-
-	// Don't deliver data & close underlying connection
-	// if client has crossed it's allowed data delivery limit
-	if !db.IsUnderRateLimit(t.DB, user.Address) {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		t.ConnLock.Lock()
-
-		if err := t.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Crossed Allowed Rate Limit",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver rate limit crossed message to client : %s\n", err.Error())
-		}
-
-		t.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		t.Counter.IncrementSend(1)
-		return
-
-	}
-
-	if t.SendData(&transaction) {
-		db.PutDataDeliveryInfo(t.DB, user.Address, "/v1/ws/transaction", uint64(len(msg)))
-	}
+	_ = t.SendData(&transaction)
 
 }
 

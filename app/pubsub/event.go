@@ -10,7 +10,6 @@ import (
 
 	"github.com/itzmeanjan/ette/app/data"
 	d "github.com/itzmeanjan/ette/app/data"
-	"github.com/itzmeanjan/ette/app/db"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
@@ -139,84 +138,7 @@ func (e *EventConsumer) Send(msg string) {
 		return
 	}
 
-	user := db.GetUserFromAPIKey(e.DB, request.APIKey)
-	if user == nil {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		e.ConnLock.Lock()
-
-		if err := e.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Bad API Key",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver bad API key message to client : %s\n", err.Error())
-		}
-
-		e.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		e.Counter.IncrementSend(1)
-		return
-
-	}
-
-	if !user.Enabled {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		e.ConnLock.Lock()
-
-		if err := e.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Bad API Key",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver bad API key message to client : %s\n", err.Error())
-		}
-
-		e.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		e.Counter.IncrementSend(1)
-		return
-
-	}
-
-	// Don't deliver data & close underlying connection
-	// if client has crossed it's allowed data delivery limit
-	if !db.IsUnderRateLimit(e.DB, user.Address) {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		e.ConnLock.Lock()
-
-		if err := e.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Crossed Allowed Rate Limit",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver rate limit crossed message to client : %s\n", err.Error())
-		}
-
-		e.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		e.Counter.IncrementSend(1)
-		return
-
-	}
-
-	if e.SendData(&event) {
-		db.PutDataDeliveryInfo(e.DB, user.Address, "/v1/ws/event", uint64(len(msg)))
-	}
+	_ = e.SendData(&event)
 
 }
 
