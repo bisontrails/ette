@@ -1,0 +1,45 @@
+version: 2.1
+orbs:
+  gcp-gcr: circleci/gcp-gcr@0.0.7
+  docker: circleci/docker@1.5.0
+executors:
+  docker-publisher:
+    docker:
+      - image: circleci/buildpack-deps:stretch
+jobs:
+  tag:
+    docker:
+      - image: cimg/base:2020.01
+    steps:
+      - checkout
+      - run:
+          name: Tag Chart Versions
+          command: |
+            for versions in $(find . -name Chart.yaml -exec awk '/version/ { split($0, a, ": "); len=split(FILENAME, f, "/"); print f[len-1] "-" a[2] }' {} +)
+            do
+                if ! git rev-parse $versions > /dev/null 2>&1
+                then
+                    git tag $versions
+                fi
+            done
+            git push --tags
+workflows:
+  version: 2
+  onCommit:
+    jobs:
+      - tag:
+          name: 'tag_chart'
+          filters:
+            branches:
+              only: master
+  ette-build:
+    jobs:
+      - docker/publish:
+          name: ette
+          context: docker_hub
+          docker-context: /
+          dockerfile: Dockerfile
+          image: bisontrails/ette
+          tag: ${CIRCLE_SHA1:0:7},$CIRCLE_BRANCH
+
+
