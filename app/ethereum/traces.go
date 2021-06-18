@@ -21,7 +21,6 @@ func DebugTransaction(hash string, parameters string) (string, error) {
 		log.Println(err)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
-	log.Println("Request info: " + resp.Status + " " + string(body))
 	return string(body), err
 }
 
@@ -37,6 +36,5 @@ func DebugBlockByNumber(block string, parameters string) (string, error) {
 		log.Println(err)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
-	log.Println("Request info: " + resp.Status + " " + string(body))
 	return string(body), err
 }
