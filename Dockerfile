@@ -5,7 +5,7 @@ RUN apk add --no-cache git make gcc musl-dev linux-headers bash
 
 WORKDIR /
 
-RUN git clone https://github.com/bisontrails/ette
+ADD . /ette
 
 RUN cd ette && make build
 
