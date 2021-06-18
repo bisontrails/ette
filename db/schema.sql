@@ -63,7 +63,6 @@ create index on events using gin(topics);
 
 create table users (
     address char(42) not null,
-    apikey char(66) primary key,
     ts timestamp not null,
     enabled boolean default true
 );

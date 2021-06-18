@@ -74,10 +74,6 @@ func (r *queryResolver) TransactionCountByBlockHash(ctx context.Context, hash st
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
 
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
-
 	return count, nil
 }
 
@@ -102,10 +98,6 @@ func (r *queryResolver) TransactionCountByBlockNumber(ctx context.Context, numbe
 	// to client
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
-
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
 
 	return count, nil
 }
@@ -136,10 +128,6 @@ func (r *queryResolver) TransactionCountFromAccountByNumberRange(ctx context.Con
 	// to client
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
-
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
 
 	return count, nil
 }
@@ -175,10 +163,6 @@ func (r *queryResolver) TransactionCountFromAccountByTimeRange(ctx context.Conte
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
 
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
-
 	return count, nil
 }
 
@@ -213,10 +197,6 @@ func (r *queryResolver) TransactionCountToAccountByNumberRange(ctx context.Conte
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
 
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
-
 	return count, nil
 }
 
@@ -250,10 +230,6 @@ func (r *queryResolver) TransactionCountToAccountByTimeRange(ctx context.Context
 	// to client
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
-
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
 
 	return count, nil
 }
@@ -292,10 +268,6 @@ func (r *queryResolver) TransactionCountBetweenAccountsByNumberRange(ctx context
 	// to client
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
-
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
 
 	return count, nil
 }
@@ -338,10 +310,6 @@ func (r *queryResolver) TransactionCountBetweenAccountsByTimeRange(ctx context.C
 	// to client
 	_count := make([]byte, 4)
 	binary.LittleEndian.PutUint32(_count, uint32(count))
-
-	if err := doBookKeeping(ctx, _count); err != nil {
-		return 0, errors.New("Book keeping failed")
-	}
 
 	return count, nil
 }

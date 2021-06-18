@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	d "github.com/itzmeanjan/ette/app/data"
 	"github.com/itzmeanjan/ette/app/db"
+	"github.com/itzmeanjan/ette/app/ethereum"
 	q "github.com/itzmeanjan/ette/app/queue"
 	"gorm.io/gorm"
 )
@@ -43,6 +44,13 @@ func FetchBlockByNumber(client *ethclient.Client, number uint64, _db *gorm.DB, r
 	_num.SetUint64(number)
 
 	block, err := client.BlockByNumber(context.Background(), _num)
+	if err != nil {
+
+		log.Printf("❗️ Failed to fetch block %d : %s\n", number, err)
+		return false
+
+	}
+	_, err = ethereum.DebugBlockByNumber(_num.Text(16), `{}`)
 	if err != nil {
 
 		log.Printf("❗️ Failed to fetch block %d : %s\n", number, err)

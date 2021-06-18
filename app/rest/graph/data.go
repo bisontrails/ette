@@ -5,12 +5,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/itzmeanjan/ette/app/data"
-	_db "github.com/itzmeanjan/ette/app/db"
 	"github.com/itzmeanjan/ette/app/rest/graph/model"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
@@ -24,7 +22,7 @@ func GetDatabaseConnection(conn *gorm.DB) {
 	db = conn
 }
 
-// Attempting to recover router context i.e. which holds client `APIKey` in request header,
+// Attempting to recover router context,
 // in graphql handler context, so that we can do some accounting job
 func routerContextFromGraphQLContext(ctx context.Context) (*gin.Context, error) {
 
@@ -42,55 +40,11 @@ func routerContextFromGraphQLContext(ctx context.Context) (*gin.Context, error) 
 
 }
 
-// Attempts to extract out `APIKey` used passed along
-// with request, in graphql handler function, to be used for
-// doing some book keeping work
-func getAPIKey(ctx context.Context) string {
-
-	routerCtx, err := routerContextFromGraphQLContext(ctx)
-	if err != nil {
-
-		log.Printf("[!] Failed to get `APIKey` : %s\n", err.Error())
-		return ""
-
-	}
-
-	return routerCtx.GetHeader("APIKey")
-
-}
-
-// Attempts to recover `APIKey` from router context, which is
-// then used for looking up user, so that data delivery information can
-// be persisted into DB
-func doBookKeeping(ctx context.Context, _data []byte) error {
-
-	if _data == nil {
-		return errors.New("JSON marshalling failed")
-	}
-
-	user := _db.GetUserFromAPIKey(db, getAPIKey(ctx))
-	if user == nil {
-		return errors.New("Failed to get user from `APIKey`")
-	}
-
-	_db.PutDataDeliveryInfo(db, user.Address, "/v1/graphql", uint64(len(_data)))
-	return nil
-
-}
-
 // Converting block data to graphQL compatible data structure
 func getGraphQLCompatibleBlock(ctx context.Context, block *data.Block, bookKeeping bool) (*model.Block, error) {
 
 	if block == nil {
 		return nil, errors.New("Found nothing")
-	}
-
-	// to be `false` when calling from `getGraphQLCompatibleBlocks(...)`
-	// because that function will then take care of it's own book keeping logic
-	if bookKeeping {
-		if err := doBookKeeping(ctx, block.ToJSON()); err != nil {
-			return nil, errors.New("Book keeping failed")
-		}
 	}
 
 	extraData := ""
@@ -128,10 +82,6 @@ func getGraphQLCompatibleBlocks(ctx context.Context, blocks *data.Blocks) ([]*mo
 		return nil, errors.New("Found nothing")
 	}
 
-	if err := doBookKeeping(ctx, blocks.ToJSON()); err != nil {
-		return nil, errors.New("Book keeping failed")
-	}
-
 	_blocks := make([]*model.Block, len(blocks.Blocks))
 
 	for k, v := range blocks.Blocks {
@@ -146,14 +96,6 @@ func getGraphQLCompatibleBlocks(ctx context.Context, blocks *data.Blocks) ([]*mo
 func getGraphQLCompatibleTransaction(ctx context.Context, tx *data.Transaction, bookKeeping bool) (*model.Transaction, error) {
 	if tx == nil {
 		return nil, errors.New("Found nothing")
-	}
-
-	// to be `false` when calling from `getGraphQLCompatibleTransactions(...)`
-	// because that function will then take care of it's own book keeping logic
-	if bookKeeping {
-		if err := doBookKeeping(ctx, tx.ToJSON()); err != nil {
-			return nil, errors.New("Book keeping failed")
-		}
 	}
 
 	data := ""
@@ -204,10 +146,6 @@ func getGraphQLCompatibleTransactions(ctx context.Context, tx *data.Transactions
 		return nil, errors.New("Found nothing")
 	}
 
-	if err := doBookKeeping(ctx, tx.ToJSON()); err != nil {
-		return nil, errors.New("Book keeping failed")
-	}
-
 	_tx := make([]*model.Transaction, len(tx.Transactions))
 
 	for k, v := range tx.Transactions {
@@ -222,14 +160,6 @@ func getGraphQLCompatibleTransactions(ctx context.Context, tx *data.Transactions
 func getGraphQLCompatibleEvent(ctx context.Context, event *data.Event, bookKeeping bool) (*model.Event, error) {
 	if event == nil {
 		return nil, errors.New("Found nothing")
-	}
-
-	// to be `false` when calling from `getGraphQLCompatibleEvents(...)`
-	// because that function will then take care of it's own book keeping logic
-	if bookKeeping {
-		if err := doBookKeeping(ctx, event.ToJSON()); err != nil {
-			return nil, errors.New("Book keeping failed")
-		}
 	}
 
 	data := ""
@@ -255,10 +185,6 @@ func getGraphQLCompatibleEvents(ctx context.Context, events *data.Events) ([]*mo
 
 	if !(len(events.Events) > 0) {
 		return nil, errors.New("Found nothing")
-	}
-
-	if err := doBookKeeping(ctx, events.ToJSON()); err != nil {
-		return nil, errors.New("Book keeping failed")
 	}
 
 	_events := make([]*model.Event, len(events.Events))

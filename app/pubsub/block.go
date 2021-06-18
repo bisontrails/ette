@@ -12,7 +12,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/itzmeanjan/ette/app/data"
-	"github.com/itzmeanjan/ette/app/db"
 )
 
 // BlockConsumer - To be subscribed to `block` topic using this consumer handle
@@ -94,81 +93,6 @@ func (b *BlockConsumer) Send(msg string) {
 		return
 	}
 
-	user := db.GetUserFromAPIKey(b.DB, request.APIKey)
-	if user == nil {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		b.ConnLock.Lock()
-
-		if err := b.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Bad API Key",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver bad API key message to client : %s\n", err.Error())
-		}
-
-		b.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		b.Counter.IncrementSend(1)
-		return
-
-	}
-
-	if !user.Enabled {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		b.ConnLock.Lock()
-
-		if err := b.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Bad API Key",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver bad API key message to client : %s\n", err.Error())
-		}
-
-		b.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		b.Counter.IncrementSend(1)
-		return
-
-	}
-
-	// Don't deliver data & close underlying connection
-	// if client has crossed it's allowed data delivery limit
-	if !db.IsUnderRateLimit(b.DB, user.Address) {
-
-		// -- Critical section of code begins
-		//
-		// Attempting to write to a network resource,
-		// shared among multiple go routines
-		b.ConnLock.Lock()
-
-		if err := b.Connection.WriteJSON(&SubscriptionResponse{
-			Code:    0,
-			Message: "Crossed Allowed Rate Limit",
-		}); err != nil {
-			log.Printf("[!] Failed to deliver rate limit crossed message to client : %s\n", err.Error())
-		}
-
-		b.ConnLock.Unlock()
-		// -- ends here
-
-		// Because we're writing to socket
-		b.Counter.IncrementSend(1)
-		return
-
-	}
-
 	var block struct {
 		Hash                string  `json:"hash"`
 		Number              uint64  `json:"number"`
@@ -195,9 +119,7 @@ func (b *BlockConsumer) Send(msg string) {
 		return
 	}
 
-	if b.SendData(&block) {
-		db.PutDataDeliveryInfo(b.DB, user.Address, "/v1/ws/block", uint64(len(msg)))
-	}
+	_ = b.SendData(&block)
 
 }
 
