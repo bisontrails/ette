@@ -1,6 +1,7 @@
 package block
 
 import (
+	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -11,6 +12,7 @@ import (
 	cfg "github.com/itzmeanjan/ette/app/config"
 	d "github.com/itzmeanjan/ette/app/data"
 	"github.com/itzmeanjan/ette/app/db"
+	"github.com/itzmeanjan/ette/app/ethereum"
 	q "github.com/itzmeanjan/ette/app/queue"
 	"gorm.io/gorm"
 )
@@ -119,6 +121,11 @@ func ProcessBlockContent(client *ethclient.Client, block *types.Block, _db *gorm
 					publishable,
 					status,
 					returnValChan)
+
+				_, err := ethereum.DebugTransaction(tx.Hash().Hex(), `{}`)
+				if err != nil {
+					fmt.Println(err)
+				}
 
 			})
 		}(v)
