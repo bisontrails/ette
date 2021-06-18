@@ -50,7 +50,7 @@ func FetchBlockByNumber(client *ethclient.Client, number uint64, _db *gorm.DB, r
 		return false
 
 	}
-	_, err = ethereum.DebugBlockByNumber(_num.String(), `{}`)
+	_, err = ethereum.DebugBlockByNumber(_num.Text(16), `{}`)
 	if err != nil {
 
 		log.Printf("❗️ Failed to fetch block %d : %s\n", number, err)
