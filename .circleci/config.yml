@@ -37,7 +37,6 @@ workflows:
       - docker/publish:
           name: ette
           context: docker_hub
-          docker-context: /
           dockerfile: Dockerfile
           image: bisontrails/ette
           tag: ${CIRCLE_SHA1:0:7},$CIRCLE_BRANCH
