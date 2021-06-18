@@ -50,7 +50,13 @@ func FetchBlockByNumber(client *ethclient.Client, number uint64, _db *gorm.DB, r
 		return false
 
 	}
-	tracedBlock, err := ethereum.DebugBlockByNumber(_num.String(), `{}`)
+	_, err = ethereum.DebugBlockByNumber(_num.String(), `{}`)
+	if err != nil {
+
+		log.Printf("❗️ Failed to fetch block %d : %s\n", number, err)
+		return false
+
+	}
 
 	return ProcessBlockContent(client, block, _db, redis, publishable, queue, _status, startingAt)
 
